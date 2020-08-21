@@ -14,20 +14,15 @@ namespace DAN_LIV_Jasmina_Kostadinovic.Models
         public string EngineType { get; protected set; }
         public string Color { get; protected set; }
         public int EngineNo { get; protected set; }
-
-        protected static Random random;
+      
         protected Array colors = Enum.GetValues(typeof(Colors));
 
-        protected MotorVehicle()
-        {
-            random = new Random();          
-        }
         internal void GenerateRandomColor()
         {
-            Color = colors.GetValue(random.Next(colors.Length)).ToString();
+            Color = colors.GetValue(Program.random.Next(colors.Length)).ToString();
         }
 
         internal virtual void Start() { }
-        internal virtual void Stop() { }
+        internal virtual void FailedStop() { }
     }
 }

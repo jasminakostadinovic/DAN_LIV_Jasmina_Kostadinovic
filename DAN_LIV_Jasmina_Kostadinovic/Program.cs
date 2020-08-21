@@ -1,16 +1,13 @@
 ﻿using DAN_LIV_Jasmina_Kostadinovic.Models;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace DAN_LIV_Jasmina_Kostadinovic
 {
-  
+
     class Program
     {
         public static CountdownEvent countdown = new CountdownEvent(3);
@@ -22,6 +19,8 @@ namespace DAN_LIV_Jasmina_Kostadinovic
         public static int counter;
         public static string firstPosition;
         public static string secondPosition;
+        public static bool isRaceOver;
+        public  static Random random = new Random();
         static void Main(string[] args)
         {
             var countDown = Task.Run(() =>
@@ -39,6 +38,7 @@ namespace DAN_LIV_Jasmina_Kostadinovic
             var car3 = new Car("Golf");
             car3.Repaint(Colors.Orange.ToString());
 
+            //ensure that the red cars are going to participate in the race
             car1.Repaint(Colors.Red.ToString());
             car2.Repaint(Colors.Red.ToString());
 
@@ -55,6 +55,8 @@ namespace DAN_LIV_Jasmina_Kostadinovic
             }
             countdown.Wait();
 
+            isRaceOver = true;
+            Thread.Sleep(2000);
             GetResult();
             Console.ReadLine();
         }
@@ -64,7 +66,7 @@ namespace DAN_LIV_Jasmina_Kostadinovic
             Console.WriteLine("The car race is over.");
             if (secondPosition == null && firstPosition == null)
             {
-                Console.WriteLine("There is no winner in this car race.");
+                Console.WriteLine("There is no winner in this red cars race.");
                 return;
             }            
             if (firstPosition != null)
