@@ -23,42 +23,64 @@ namespace DAN_LIV_Jasmina_Kostadinovic
         public  static Random random = new Random();
         static void Main(string[] args)
         {
-            var countDown = Task.Run(() =>
+            try
             {
-                int counter = 1;
-                while (counter <= 5)
+                var countDown = Task.Run(() =>
                 {
-                    Thread.Sleep(1000);
-                    Console.WriteLine(counter++);
+                    int counter = 1;
+                    while (counter <= 5)
+                    {
+                        Thread.Sleep(1000);
+                        Console.WriteLine(counter++);
+                    }
+                });
+
+                //creating cars
+                var car1 = new Car("BMW");
+                var car2 = new Car("Audi");
+                var car3 = new Car("Golf");
+                car3.Repaint(Colors.Orange.ToString());
+
+                //ensure that the red cars are going to participate in the race
+                car1.Repaint(Colors.Red.ToString());
+                car2.Repaint(Colors.Red.ToString());
+
+                var cars = new List<Car>(3);
+                cars.Add(car1);
+                cars.Add(car2);
+                cars.Add(car3);
+
+                //creting tractors
+                var tractor1 = new Tractor(111);
+                var tractor2 = new Tractor(222);
+                var tractors = new Dictionary<int, Tractor>();
+                tractors.Add(tractor1.EngineNo, tractor1);
+                tractors.Add(tractor2.EngineNo, tractor2);
+
+                //creating trucks
+                var truck1 = new Truck();
+                var truck2 = new Truck();
+                var trucks = new Stack<Truck>();
+                trucks.Push(truck1);
+                trucks.Push(truck2);
+
+                countDown.Wait();
+                Console.WriteLine("The car race has started!");
+                for (int i = 0; i < cars.Count; i++)
+                {
+                    cars[i].Thread.Start();
                 }
-            });
+                countdown.Wait();
 
-            var car1 = new Car("BMW");
-            var car2 = new Car("Audi");
-            var car3 = new Car("Golf");
-            car3.Repaint(Colors.Orange.ToString());
-
-            //ensure that the red cars are going to participate in the race
-            car1.Repaint(Colors.Red.ToString());
-            car2.Repaint(Colors.Red.ToString());
-
-            var cars = new List<Car>(3);
-            cars.Add(car1);
-            cars.Add(car2);
-            cars.Add(car3);
-
-            countDown.Wait();
-            Console.WriteLine("The car race has started!");
-            for (int i = 0; i < cars.Count; i++)
-            {
-                cars[i].Thread.Start();
+                isRaceOver = true;
+                Thread.Sleep(2000);
+                GetResult();
+                Console.ReadLine();
             }
-            countdown.Wait();
-
-            isRaceOver = true;
-            Thread.Sleep(2000);
-            GetResult();
-            Console.ReadLine();
+           catch(Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
         }
 
         private static void GetResult()

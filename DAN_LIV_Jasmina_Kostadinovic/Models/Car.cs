@@ -22,7 +22,7 @@ namespace DAN_LIV_Jasmina_Kostadinovic.Models
             RemainingFuel = TankVolume;
             Thread = new Thread(Start);
             Thread.Name = Manufacturer + " " + RegistrationNo;
-            FuelConsumption = Program.random.Next(1, 5);
+            FuelConsumption = Program.random.Next(1, 10);
         }
         #endregion
 
@@ -45,7 +45,6 @@ namespace DAN_LIV_Jasmina_Kostadinovic.Models
             Program.semaphore.Wait();
             Console.WriteLine($"The car {Color} {Thread.Name} is refilling...");
             RemainingFuel = TankVolume;
-            Console.WriteLine(RemainingFuel + "" + Thread.Name);
             Program.semaphore.Release();
             Console.WriteLine($"The car {Color} {Thread.Name} has left the gas station.");
             Program.autoReset.Set();
@@ -134,29 +133,33 @@ namespace DAN_LIV_Jasmina_Kostadinovic.Models
                             await Task.Run(() => Refuel());
 
                         //the last section of the race
-                        await Task.Delay(7000, cancellationToken.Token);
-
-                        if (!cancellationToken.IsCancellationRequested)
-                        {
-                            await Task.Run(() => SuccesfullyStop());
-                            return;
-                        }                          
+                        await Task.Delay(7000, cancellationToken.Token);                         
                     }
                 }
-                await Task.Run(() => FailedStop());              
+                await Task.Run(() => Stop());
             }
             catch (TaskCanceledException)
             {
-                //ignoring the TaskCanceledException               
+                //ignoring the TaskCanceledException 
+                await Task.Run(() => Stop());
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
             }
-
         }
 
-        private async void SuccesfullyStop()
+        internal override async void Stop()
+        {
+            if(cancellationToken.IsCancellationRequested)
+            {
+                await FailedStop();
+                return;
+            }
+            await SuccesfullyStop();
+        }
+
+        private async Task SuccesfullyStop()
         {
             cancellationToken.Cancel();
             Console.WriteLine($"The car {Color} {Thread.Name} has successfully finished the car race.");
@@ -177,9 +180,10 @@ namespace DAN_LIV_Jasmina_Kostadinovic.Models
                 }
             }
         }
-        internal async override void FailedStop()
+        private async  Task FailedStop()
         {
-          Console.WriteLine($"The car {Color} {Thread.Name} ran out of gasoline and has been disqualified from the race.");           
+            await Task.Run(() => Console.WriteLine($"The car {Color} {Thread.Name} ran out of gasoline and has been disqualified from the race."));
+           
         }
 
         protected bool IsRanOutOfGasoline()
