@@ -7,22 +7,43 @@ namespace DAN_LIV_Jasmina_Kostadinovic.Models
 {
     class Car : MotorVehicle
     {
+        #region Fields
         CancellationTokenSource cancellationToken = new CancellationTokenSource();
         CancellationTokenSource cancellationTokenForSemaphore = new CancellationTokenSource();
+        private bool traficLightSignalGreen;
+        private BackgroundWorker workerFuelConsumption = new BackgroundWorker();
+        private BackgroundWorker workerSemaphore = new BackgroundWorker();
+        private int minimumAmountOfFuel = 15;
+        #endregion
+
+        #region Constructors
         public Car(string manufacturer) : base()
         {
             Manufacturer = manufacturer;
             GenerateRandomColor();
-            TankVolume = random.Next(40, 45);
-            RemainingGasoline = TankVolume;
+            TankVolume = random.Next(40, 70);
+            RemainingFuel = TankVolume;
             Thread = new Thread(Start);
             Thread.Name = Manufacturer + " " + RegistrationNo;
-            workerGasolineConsumption.DoWork += GasolineConsumptionProgress;
+            workerFuelConsumption.DoWork += FuelConsumptionProgress;
             workerSemaphore.DoWork += SemaphorSimulation;
-            //workerRefuel.DoWork += Refuel;
-            GasolineConsumption = random.Next(35, 40);
+            FuelConsumption = random.Next(1, 10);
         }
+        #endregion
 
+        #region Properties
+        public string RegistrationNo { get; protected set; }
+        public int DoorsCount { get; protected set; }
+        public int TankVolume { get; protected set; }
+        public string TransmissionType { get; protected set; }
+        public string Manufacturer { get; protected set; }
+        public int TrafficLicenseNo { get; protected set; }
+        public int RemainingFuel { get; protected set; }
+        public int FuelConsumption { get; protected set; }
+        public Thread Thread { get; protected set; }
+        #endregion
+
+        #region Methods
         private void Refuel()
         {
             Console.WriteLine($"The car {Color} {Thread.Name} has stoped to refuel.");
@@ -31,7 +52,6 @@ namespace DAN_LIV_Jasmina_Kostadinovic.Models
             Program.semaphore.Release();
             Console.WriteLine($"The car {Color} {Thread.Name} has left the gas station.");
             Program.autoReset.Set();
-
         }
 
         private void SemaphorSimulation(object sender, DoWorkEventArgs e)
@@ -39,21 +59,18 @@ namespace DAN_LIV_Jasmina_Kostadinovic.Models
             while (!cancellationTokenForSemaphore.IsCancellationRequested)
             {
                 Thread.Sleep(2000);
-                if (TraficLightSignalGreen == true)
-                    TraficLightSignalGreen = false;
+                if (traficLightSignalGreen == true)
+                    traficLightSignalGreen = false;
                 else
-                    TraficLightSignalGreen = true;
+                    traficLightSignalGreen = true;
             }
         }
-
-
-
-        private void GasolineConsumptionProgress(object sender, DoWorkEventArgs e)
+        private void FuelConsumptionProgress(object sender, DoWorkEventArgs e)
         {
-            while (RemainingGasoline > 0 || !cancellationToken.IsCancellationRequested)
+            while (RemainingFuel > 0 || !cancellationToken.IsCancellationRequested)
             {
                 Thread.Sleep(1000);
-                RemainingGasoline -= GasolineConsumption;
+                RemainingFuel -= FuelConsumption;
                 if (IsRanOutOfGasoline())
                 {
                     cancellationToken.Cancel();
@@ -65,26 +82,9 @@ namespace DAN_LIV_Jasmina_Kostadinovic.Models
 
         private bool ShouldRefuel()
         {
-            return RemainingGasoline < 15;
+            return RemainingFuel < minimumAmountOfFuel;
 
         }
-
-        public string RegistrationNo { get; protected set; }
-        public int DoorsCount { get; protected set; }
-        public int TankVolume { get; protected set; }
-        public string TransmissionType { get; protected set; }
-        public string Manufacturer { get; protected set; }
-        public int TrafficLicenseNo { get; protected set; }
-
-        public int RemainingGasoline { get; protected set; }
-        public int GasolineConsumption { get; protected set; }
-        private bool TraficLightSignalGreen;
-
-        public Thread Thread { get; protected set; }
-        private BackgroundWorker workerGasolineConsumption = new BackgroundWorker();
-        private BackgroundWorker workerSemaphore = new BackgroundWorker();
-
-
         internal void Repaint(string color)
         {
             Color = color;
@@ -103,23 +103,28 @@ namespace DAN_LIV_Jasmina_Kostadinovic.Models
             {
                 Console.WriteLine($"The car {Color} {Thread.Name} has start the car race.");
 
-                workerGasolineConsumption.RunWorkerAsync();
+                workerFuelConsumption.RunWorkerAsync();
                 workerSemaphore.RunWorkerAsync();
+
+                //the first section of the race
                 await Task.Delay(10000, cancellationToken.Token);
 
+                //checking if the car has run out of the fuel
                 if (!cancellationToken.IsCancellationRequested)
                 {
-                    if (!TraficLightSignalGreen)
+                    if (!traficLightSignalGreen)
                         Thread.Sleep(2000);
                     Console.WriteLine($"The car {Color} {Thread.Name} has passed the trafic light.");
                     cancellationTokenForSemaphore.Cancel();
                     await Task.Delay(3000, cancellationToken.Token);
 
+                    //checking if the car has run out of the fuel
                     if (!cancellationToken.IsCancellationRequested)
                     {
                         if (ShouldRefuel())
                             await Task.Run(() => Refuel());
 
+                        //the last section of the race
                         await Task.Delay(7000, cancellationToken.Token);
                     }
                 }
@@ -128,7 +133,8 @@ namespace DAN_LIV_Jasmina_Kostadinovic.Models
             }
             catch (TaskCanceledException)
             {
-
+                //ignoring the TaskCanceledException
+                Program.countdown.Signal();
             }
             catch (Exception e)
             {
@@ -136,8 +142,7 @@ namespace DAN_LIV_Jasmina_Kostadinovic.Models
             }
 
         }
-
-        private void GetPlace()
+        private void GetRankingOfTheRedCar()
         {
             if (Color == Colors.Red.ToString())
             {
@@ -159,13 +164,14 @@ namespace DAN_LIV_Jasmina_Kostadinovic.Models
                 return;
             }
             cancellationToken.Cancel();
-            Console.WriteLine($"The car {Color} {Thread.Name} has finished the car race.");
-            await Task.Run(() => GetPlace());
+            Console.WriteLine($"The car {Color} {Thread.Name} has successfully finished the car race.");
+            await Task.Run(() => GetRankingOfTheRedCar());
         }
 
         protected bool IsRanOutOfGasoline()
         {
-            return RemainingGasoline <= 0;
+            return RemainingFuel <= 0;
         }
+        #endregion
     }
 }
